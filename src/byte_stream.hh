@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <queue>
 #include <string>
 #include <string_view>
-#include <deque>
 
 class Reader;
 class Writer;
@@ -24,12 +24,14 @@ public:
 
 protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
-  uint64_t capacity_{0};
-  bool error_ {false};
-  bool close_{false};
-  uint64_t write_count{0};
-  uint64_t read_count{0};
-  std::string buffer_{};
+  std::queue<std::string> bytes_ {};
+  std::string_view view_wnd_ {};
+  uint64_t capacity_ {};
+  uint64_t num_bytes_pushed_ {};
+  uint64_t num_bytes_popped_ {};
+  uint64_t num_bytes_buffered_ {};
+  bool is_closed_ {};
+  bool error_ {};
 };
 
 class Writer : public ByteStream
@@ -55,7 +57,7 @@ public:
 };
 
 /*
- * read: A (provided) helper function thats peeks and pops up to `max_len` bytes
+ * read: A (provided) helper function thats peeks and pops up to `len` bytes
  * from a ByteStream Reader into a string;
  */
-void read( Reader& reader, uint64_t max_len, std::string& out );
+void read( Reader& reader, uint64_t len, std::string& out );
