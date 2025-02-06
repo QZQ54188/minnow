@@ -50,7 +50,7 @@ private:
   void flush_buffer();
 
   ByteStream output_;
-  uint64_t bytes_pending_{};
-  uint64_t expected_index_{};
-  std::list<std::tuple<uint64_t, std::string, bool>> buffer_{};
+  uint64_t bytes_pending_ {};
+  uint64_t expected_index_ {};
+  std::list<std::tuple<uint64_t, std::string, bool>> buffer_ {};
 };
