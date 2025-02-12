@@ -11,7 +11,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   if ( first_index >= unacceptable_index || writer.is_closed() || writer.available_capacity() == 0 ) {
     // 当前下标超出范围，写道被关闭或者剩余容量为0直接返回
     return;
-  } else if ( first_index + data.length() >= unacceptable_index ) {
+  } else if ( first_index + data.length() > unacceptable_index ) {
     // 当前数据位置超出capacity，重新调整数据大小
     data.resize( unacceptable_index - first_index );
     // 数据被截断之后不视为最后一个分组（测试数据而来）
@@ -65,7 +65,7 @@ void Reassembler::cache_bytes( uint64_t first_index, string data, bool is_last_s
 
   // 当left==buffer_.end()的时候，直接插入到left位置即可
   if ( const uint64_t end_index = first_index + data.length(); left != buffer_.end() ) {
-    auto& [left_index, left_data, _] = *left;
+    auto& [left_index, left_data, last] = *left;
     const uint64_t right_index = left_data.length() + left_index;
     // 得出基本数据之后开始计算左边区间和当前区间的关系
     if ( first_index >= left_index && right_index >= end_index ) {
