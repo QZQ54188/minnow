@@ -11,8 +11,10 @@ bool Writer::is_closed() const
 
 void Writer::push( string data )
 {
+  //如果当前的字节流已经被关闭，那么不接受任何字节进入
   if ( is_closed() )
     return;
+  //数据大小大于可用容量，对数据进行截断处理
   if ( data.size() > available_capacity() )
     data.resize( available_capacity() );
   if ( !data.empty() ) {
@@ -21,7 +23,7 @@ void Writer::push( string data )
     num_bytes_buffered_ += data.size();
     bytes_.emplace( move( data ) );
   }
-  // 临界条件：pop 了所有字节导致队列为空且 view_wnd_ 为空
+  //确定当前首部string视图
   if ( view_wnd_.empty() && !bytes_.empty() )
     view_wnd_ = bytes_.front();
 }
@@ -63,6 +65,7 @@ string_view Reader::peek() const
 
 void Reader::pop( uint64_t len )
 {
+  // 对弹出字节数目进行判断，如果大于view_wnd_就不断从队列中循环弹出view_wnd_
   auto remainder = len;
   while ( remainder >= view_wnd_.size() && remainder != 0 ) {
     // 不断清掉能从队列中 pop 出去的字节

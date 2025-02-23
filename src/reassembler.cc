@@ -6,7 +6,9 @@ using namespace std;
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
+  // 首先获取当前字节流的写权限
   Writer& writer = output_.writer();
+  // 计算当前重组器可接受的下标范围，分类讨论
   const uint64_t unacceptable_index = expected_index_ + writer.available_capacity();
   if ( first_index >= unacceptable_index || writer.is_closed() || writer.available_capacity() == 0 ) {
     // 当前下标超出范围，写道被关闭或者剩余容量为0直接返回
@@ -18,11 +20,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     is_last_substring = false;
   }
 
+  // 如果接受到的下标不是期待下标，就缓存，如果是期待下标，就
   if ( first_index > expected_index_ ) {
+    // 在这个逻辑分支中先判断缓存是为了更方便处理重复分组
     cache_bytes( first_index, std::move( data ), is_last_substring );
   } else {
     push_bytes( first_index, std::move( data ), is_last_substring );
   }
+  // 刷新缓冲区，如果可以将重组器缓存区组装好的字节推到字节buffer中就推入
   flush_buffer();
 }
 
@@ -69,7 +74,7 @@ void Reassembler::cache_bytes( uint64_t first_index, string data, bool is_last_s
     const uint64_t right_index = left_data.length() + left_index;
     // 得出基本数据之后开始计算左边区间和当前区间的关系
     if ( first_index >= left_index && right_index >= end_index ) {
-      // 当前数据已经被包含在左边区间中
+      // 当前数据已经被包含在左边区间中，重复数据直接返回，无需缓存
       return;
     } else if ( left_index > end_index ) {
       // 两个区间没有重叠的地方

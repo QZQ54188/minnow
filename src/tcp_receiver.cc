@@ -17,6 +17,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
     // 如果收到的序列号与ISN相同，由于SYN需要占一个字节，所以无法在当前序列号插入数据
     return;
   }
+  // checkpoint表示已经传输到重组器中的字节总数
   const uint64_t checkpoint = reassembler_.writer().bytes_pushed() + SYN_;
   uint64_t absolute_seqnum = message.seqno.unwrap( seq_, checkpoint );
   // 由于字节流序号中没有ISN占位，所以计算出绝对序列号之后还需要进行处理
