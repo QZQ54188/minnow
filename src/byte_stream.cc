@@ -11,10 +11,10 @@ bool Writer::is_closed() const
 
 void Writer::push( string data )
 {
-  //如果当前的字节流已经被关闭，那么不接受任何字节进入
+  // 如果当前的字节流已经被关闭，那么不接受任何字节进入
   if ( is_closed() )
     return;
-  //数据大小大于可用容量，对数据进行截断处理
+  // 数据大小大于可用容量，对数据进行截断处理
   if ( data.size() > available_capacity() )
     data.resize( available_capacity() );
   if ( !data.empty() ) {
@@ -23,7 +23,7 @@ void Writer::push( string data )
     num_bytes_buffered_ += data.size();
     bytes_.emplace( move( data ) );
   }
-  //确定当前首部string视图
+  // 确定当前首部string视图
   if ( view_wnd_.empty() && !bytes_.empty() )
     view_wnd_ = bytes_.front();
 }

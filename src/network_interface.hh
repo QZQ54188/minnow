@@ -4,8 +4,13 @@
 #include "ethernet_frame.hh"
 #include "ipv4_datagram.hh"
 
+#include <algorithm>
 #include <memory>
+#include <optional>
 #include <queue>
+#include <unordered_map>
+#include <vector>
+#include <map>
 
 // A "network interface" that connects IP (the internet layer, or network layer)
 // with Ethernet (the network access layer, or link layer).
@@ -67,6 +72,28 @@ public:
   std::queue<InternetDatagram>& datagrams_received() { return datagrams_received_; }
 
 private:
+  // 由网络层数据生成链路层帧
+  EthernetFrame make_ethernet_frame( const uint16_t& type,
+                                     std::vector<Ref<std::string>> payload,
+                                     std::optional<EthernetAddress> dst = std::nullopt ) const;
+
+  // arp请求或者响应报文，仅在响应报文时使用target_mac
+  ARPMessage make_arp_message( const uint16_t& type,
+                               const uint32_t& target_ip,
+                               std::optional<EthernetAddress> target_mac = std::nullopt ) const;
+
+  class address_mapping
+  {
+    EthernetAddress ether_addr_ {};
+    size_t timer_ {};
+
+  public:
+    explicit address_mapping( EthernetAddress ether_addr ) : ether_addr_ { std::move( ether_addr ) }, timer_ {} {};
+    EthernetAddress get_ether() const noexcept { return ether_addr_; };
+    address_mapping& tick( const size_t ms_time_passed ) noexcept;
+    address_mapping& operator+=( const size_t ms_time_passed ) noexcept { return tick( ms_time_passed ); };
+    auto operator<=>( const size_t deadline ) const { return timer_ <=> deadline; };
+  };
   // Human-readable name of the interface
   std::string name_;
 
@@ -82,4 +109,14 @@ private:
 
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
+
+  // 为了在数据链路层传输，需要一个表单来存储ip地址到mac地址的映射，
+  std::unordered_map<uint32_t, address_mapping> addr_mapping_ {};
+
+  // 发送arp请求的数据报在获取到目标mac地址之前不可发送，将其缓存起来，key为目标ip地址
+  // 因为可能一份ip对应多个数据报，所以使用multimap
+  std::multimap<uint32_t, InternetDatagram> bufferd_ip_data_ {};
+
+  // 将5s(lab5要求)内发送过arp请求的ip数据报加入表单中防止arp泛洪，value表示计时器
+  std::unordered_map<uint32_t, size_t> arp_request_buffer_ {};
 };

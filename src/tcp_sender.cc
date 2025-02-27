@@ -62,7 +62,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     while ( payload.length() + seq_num_in_flight_ + !send_SYN_ < window_size_
             && payload.length() < TCPConfig::MAX_PAYLOAD_SIZE ) {
       // 组装payload
-      if (byte_to_trans.empty() || FIN_) {
+      if ( byte_to_trans.empty() || FIN_ ) {
         // 没有数据需要发送了或者需要发送FIN_
         // cout<<"====" << byte_to_trans<<"===="<<endl;
         break;
@@ -115,7 +115,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 {
   window_size_ = msg.window_size == 0 ? 1 : msg.window_size;
   zero_window_ = msg.window_size == 0;
-  if ( !msg.ackno.has_value()) {
+  if ( !msg.ackno.has_value() ) {
     if ( msg.RST ) {
       input_.set_error();
     }

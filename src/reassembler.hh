@@ -50,8 +50,8 @@ private:
   void flush_buffer();
 
   ByteStream output_;
-  uint64_t bytes_pending_ {};   //当前存储在重组器中的字节总数
-  uint64_t expected_index_ {};  //重组器期待的下一个字节的下标，可用于合并
-  //该数据结构表示当前重组器，三个组成的数据成员分别是insert函数的三个参数
-  std::list<std::tuple<uint64_t, std::string, bool>> buffer_ {};  
+  uint64_t bytes_pending_ {};  // 当前存储在重组器中的字节总数
+  uint64_t expected_index_ {}; // 重组器期待的下一个字节的下标，可用于合并
+  // 该数据结构表示当前重组器，三个组成的数据成员分别是insert函数的三个参数
+  std::list<std::tuple<uint64_t, std::string, bool>> buffer_ {};
 };

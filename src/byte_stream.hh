@@ -24,12 +24,12 @@ public:
 
 protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
-  std::queue<std::string> bytes_ {};    //表示字节流
-  std::string_view view_wnd_ {};        //描述字节流最开始的一个string视图，用于实现pee方法
-  uint64_t capacity_ {};    //字节流的容量，在构造函数中初始化
-  uint64_t num_bytes_pushed_ {};  //字节流中已经被push进去的总字节数目
-  uint64_t num_bytes_popped_ {};  //字节流中已经被pop出去的总字节数目
-  uint64_t num_bytes_buffered_ {};//当前字节流缓存的字节数目
+  std::queue<std::string> bytes_ {}; // 表示字节流
+  std::string_view view_wnd_ {};     // 描述字节流最开始的一个string视图，用于实现pee方法
+  uint64_t capacity_ {};             // 字节流的容量，在构造函数中初始化
+  uint64_t num_bytes_pushed_ {};     // 字节流中已经被push进去的总字节数目
+  uint64_t num_bytes_popped_ {};     // 字节流中已经被pop出去的总字节数目
+  uint64_t num_bytes_buffered_ {};   // 当前字节流缓存的字节数目
   bool is_closed_ {};
   bool error_ {};
 };

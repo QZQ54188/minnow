@@ -9,6 +9,7 @@
 #include <ranges>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 // Helper to serialize any object (without constructing a Serializer of the caller's own)
 // example: ```ethernet_frame.payload = serialize( internet_datagram );```
