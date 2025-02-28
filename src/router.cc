@@ -31,7 +31,7 @@ void Router::route()
     // received_data表示该网络接口接收到的ip数据报队列
     auto& received_data = cur_interface->datagrams_received();
     while(!received_data.empty()){
-      auto& dgram = received_data.front();
+      auto&& dgram = received_data.front();
       const auto& item = match_max_prefix(dgram.header.dst);
       if(item == router_map_.cend() || dgram.header.ttl <= 1){
         received_data.pop();
@@ -42,7 +42,7 @@ void Router::route()
       const auto& [interface_num, next_hop] = item->second;
 
       interface(interface_num) ->send_datagram(
-        dgram,
+        std::move(dgram),
         next_hop.has_value() ? *next_hop : Address::from_ipv4_numeric(dgram.header.dst)
       );
       received_data.pop();

@@ -40,7 +40,7 @@ private:
     uint32_t net_ {};     //网络号
     explicit subnet_mask(const uint8_t prefix_length, const uint32_t route_prefix) 
     : mask_(~(UINT32_MAX >> prefix_length)), net_(route_prefix & mask_){};
-    auto operator<=>(const subnet_mask& other){
+    auto operator<=>(const subnet_mask& other)const{
       return mask_ != other.mask_ ?
       mask_ <=> other.mask_ : net_ <=> other.net_;
     }
