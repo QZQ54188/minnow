@@ -75,6 +75,19 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
     if ( !parse( arp_msg, frame.payload ) ) {
       return;
     }
+    auto send_bufferd_data = [&arp_msg, this]() ->void{
+      // 遍历队列发出旧数据帧
+        auto [head, tail] = bufferd_ip_data_.equal_range( arp_msg.sender_ip_address );
+        // size_t cnt = 0;
+        for_each( head, tail, [this, &arp_msg]( auto&& iter ) -> void {
+          // std::cout<<++cnt<<std::endl;
+          transmit( make_ethernet_frame(
+            EthernetHeader::TYPE_IPv4, serialize( iter.second ), arp_msg.sender_ethernet_address ) );
+        } );
+        if ( head != tail )
+          bufferd_ip_data_.erase( head, tail );
+    };
+    
     addr_mapping_.insert_or_assign( arp_msg.sender_ip_address, address_mapping( arp_msg.sender_ethernet_address ) );
     if ( arp_msg.opcode == ARPMessage::OPCODE_REQUEST ) {
       if ( arp_msg.target_ip_address == ip_address_.ipv4_numeric() ) {
@@ -84,17 +97,11 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
                                                                     arp_msg.sender_ethernet_address ) ),
                                        arp_msg.sender_ethernet_address ) );
       }
+      if(bufferd_ip_data_.contains(arp_msg.sender_ip_address)){
+        send_bufferd_data();
+      }
     } else if ( arp_msg.opcode == ARPMessage::OPCODE_REPLY ) {
-      // 遍历队列发出旧数据帧
-      auto [head, tail] = bufferd_ip_data_.equal_range( arp_msg.sender_ip_address );
-      // size_t cnt = 0;
-      for_each( head, tail, [this, &arp_msg]( auto&& iter ) -> void {
-        // std::cout<<++cnt<<std::endl;
-        transmit( make_ethernet_frame(
-          EthernetHeader::TYPE_IPv4, serialize( iter.second ), arp_msg.sender_ethernet_address ) );
-      } );
-      if ( head != tail )
-        bufferd_ip_data_.erase( head, tail );
+      send_bufferd_data();
     }
   }
 }
