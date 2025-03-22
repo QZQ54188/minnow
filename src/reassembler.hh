@@ -46,12 +46,13 @@ public:
 
 private:
   void push_bytes( uint64_t first_index, std::string data, bool is_last_substring );
-  void cache_bytes( uint64_t first_index, std::string data, bool is_last_substring );
+  void cache_bytes( uint64_t first_index, std::string data );
   void flush_buffer();
 
   ByteStream output_;
   uint64_t bytes_pending_ {};  // 当前存储在重组器中的字节总数
   uint64_t expected_index_ {}; // 重组器期待的下一个字节的下标，可用于合并
-  // 该数据结构表示当前重组器，三个组成的数据成员分别是insert函数的三个参数
-  std::list<std::tuple<uint64_t, std::string, bool>> buffer_ {};
+  bool has_last_substring_ {false}; // 是否已接收到表示流结束的子串
+  // 该数据结构表示当前重组器，仅保存索引和数据内容，最后子串标记改为全局状态
+  std::list<std::pair<uint64_t, std::string>> buffer_ {};
 };

@@ -20,10 +20,15 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     is_last_substring = false;
   }
 
+  // 记录是否存在表示结束的子串
+  if (is_last_substring) {
+    has_last_substring_ = true;
+  }
+
   // 如果接受到的下标不是期待下标，就缓存，如果是期待下标，就
   if ( first_index > expected_index_ ) {
     // 在这个逻辑分支中先判断缓存是为了更方便处理重复分组
-    cache_bytes( first_index, std::move( data ), is_last_substring );
+    cache_bytes( first_index, std::move( data ) );
   } else {
     push_bytes( first_index, std::move( data ), is_last_substring );
   }
@@ -54,23 +59,24 @@ void Reassembler::push_bytes( uint64_t first_index, string data, bool is_last_su
     output_.writer().close();
     buffer_.clear();
     bytes_pending_ = 0;
+    has_last_substring_ = false; // 重置标志，因为已经处理过了
   }
 }
 
-void Reassembler::cache_bytes( uint64_t first_index, string data, bool is_last_substring )
+void Reassembler::cache_bytes( uint64_t first_index, string data )
 {
   // 找到buffer链表中与所给区间可能有关系的左右节点，左节点的右边界一定大于first_index
   auto left = lower_bound( buffer_.begin(), buffer_.end(), first_index, []( auto&& elem, uint64_t index ) {
-    return index > ( get<0>( elem ) + get<1>( elem ).length() );
+    return index > ( elem.first + elem.second.length() );
   } );
   // 右节点的下标大于end_index
   auto right = upper_bound( left, buffer_.end(), first_index + data.length(), []( uint64_t index, auto&& elem ) {
-    return index < get<0>( elem );
+    return index < elem.first;
   } );
 
   // 当left==buffer_.end()的时候，直接插入到left位置即可
   if ( const uint64_t end_index = first_index + data.length(); left != buffer_.end() ) {
-    auto& [left_index, left_data, last] = *left;
+    auto& [left_index, left_data] = *left;
     const uint64_t right_index = left_data.length() + left_index;
     // 得出基本数据之后开始计算左边区间和当前区间的关系
     if ( first_index >= left_index && right_index >= end_index ) {
@@ -93,7 +99,7 @@ void Reassembler::cache_bytes( uint64_t first_index, string data, bool is_last_s
 
   if ( const uint64_t end_index = first_index + data.length(); right != left && !buffer_.empty() ) {
     // right的prev才可能和当前数据有关系
-    auto& [left_index, left_data, last] = *prev( right );
+    auto& [left_index, left_data] = *prev( right );
     if ( const uint64_t right_index = left_index + left_data.length(); right_index > end_index ) {
       data.resize( data.length() - ( end_index - left_index ) );
       data.append( left_data );
@@ -101,24 +107,34 @@ void Reassembler::cache_bytes( uint64_t first_index, string data, bool is_last_s
   }
 
   for ( ; left != right; left = buffer_.erase( left ) ) {
-    bytes_pending_ -= get<1>( *left ).length();
-    is_last_substring |= get<2>( *left );
+    bytes_pending_ -= left->second.length();
   }
   bytes_pending_ += data.length();
-  buffer_.insert( left, { first_index, std::move( data ), is_last_substring } );
+  buffer_.insert( left, { first_index, std::move( data ) } );
 }
 
 void Reassembler::flush_buffer()
 {
   while ( !buffer_.empty() ) {
-    auto& [index, data, last] = buffer_.front();
+    auto& [index, data] = buffer_.front();
     if ( index > expected_index_ ) {
       break;
     }
     bytes_pending_ -= data.length();
-    push_bytes( index, std::move( data ), last );
+    
+    // 如果这是最后一个缓存数据且已经标记接收到最后子串，则传递结束标志
+    bool is_last = has_last_substring_ && buffer_.size() == 1;
+    
+    push_bytes( index, std::move( data ), is_last );
+    
     if ( !buffer_.empty() ) {
       buffer_.pop_front();
     }
+  }
+  
+  // 处理边缘情况：如果缓冲区为空但收到了最后子串标记，需要关闭流
+  if (buffer_.empty() && has_last_substring_) {
+    output_.writer().close();
+    has_last_substring_ = false;
   }
 }
